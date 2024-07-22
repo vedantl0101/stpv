@@ -1,3 +1,4 @@
 .env
 
-vercel.jsom
+vercel.json
+.vercel
