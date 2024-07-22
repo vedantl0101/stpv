@@ -7,6 +7,7 @@ from keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_absolute_percentage_error, mean_squared_error, r2_score
 import math
+import os
 
 # Set up Streamlit
 st.set_page_config(page_title="Stock Trend Prediction", layout="wide")
@@ -15,8 +16,9 @@ st.title('Stock Trend Prediction')
 @st.cache_data
 def load_ticker_data():
     try:
-        # Load ticker data from the given Excel file
-        df = pd.read_excel('global_stock_tickers_with_india.xlsx')
+        # Load ticker data from the provided Excel file
+        file_path = os.path.join(os.getcwd(), 'global_stock_tickers_with_india.xlsx')
+        df = pd.read_excel(file_path)
         if df.empty:
             st.error("No ticker data found in the Excel file.")
             return None
@@ -137,7 +139,8 @@ if ticker:
 
         # Load the model
         try:
-            model = load_model('my_model.keras')
+            model_path = os.path.join(os.getcwd(), 'my_model.keras')
+            model = load_model(model_path)
         except Exception as e:
             st.error(f"Error loading model: {str(e)}")
             st.stop()
