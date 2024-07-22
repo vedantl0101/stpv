@@ -30,9 +30,11 @@ def read_root():
 @app.get("/app")
 def run_streamlit():
     def run():
-        # Streamlit app code here
+        # Set up Streamlit
         st.set_page_config(page_title="Stock Trend Prediction", layout="wide")
         st.title('Stock Trend Prediction')
+
+        # MongoDB connection
         try:
             mongo_client = MongoClient(mongo_uri, tls=True)
             db = mongo_client['stock-trend-prediction']
@@ -40,10 +42,11 @@ def run_streamlit():
         except Exception as e:
             st.error(f"Error connecting to MongoDB: {str(e)}")
             st.stop()
-        
+
         @st.cache_data
         def load_ticker_data():
             try:
+                # Fetch data from MongoDB
                 data = list(collection.find())
                 df = pd.DataFrame(data)
                 if df.empty:
@@ -66,40 +69,73 @@ def run_streamlit():
                 st.error(f"Error downloading data: {str(e)}")
                 return None
 
+        # Load the ticker data
         ticker_data = load_ticker_data()
         if ticker_data is None:
             st.stop()
 
-        sectors = ["All", "Basic Materials", "Communication Services", "Consumer Cyclical", "Consumer Defensive", "Energy", "Financial Services", "Healthcare", "Industrials", "Real Estate", "Technology", "Utilities"]
+        # Sector options
+        sectors = [
+            "All",
+            "Basic Materials",
+            "Communication Services",
+            "Consumer Cyclical",
+            "Consumer Defensive",
+            "Energy",
+            "Financial Services",
+            "Healthcare",
+            "Industrials",
+            "Real Estate",
+            "Technology",
+            "Utilities"
+        ]
+
+        # Taking input for sector selection
         selected_sector = st.selectbox('Select Sector', sectors)
+
+        # Filter tickers based on selected sector
         filtered_ticker_data = ticker_data if selected_sector == "All" else ticker_data[ticker_data['Sector'] == selected_sector]
+
+        # Taking input for the company name
         company_name = st.text_input('Enter Company Name')
 
+        # Function to get ticker suggestions based on company name or ticker symbol input
         def get_suggestions(input_text, data):
-            suggestions = data[data['Symbol'].str.contains(input_text, case=False, na=False) | data['Name'].str.contains(input_text, case=False, na=False)]
+            suggestions = data[data['Symbol'].str.contains(input_text, case=False, na=False) | 
+                               data['Name'].str.contains(input_text, case=False, na=False)]
             return suggestions
 
         company_suggestions = get_suggestions(company_name, filtered_ticker_data)
+
+        # Display company name select box if there are suggestions
         if not company_suggestions.empty:
             selected_company_name = st.selectbox('Select Company Name', company_suggestions['Name'])
             ticker = company_suggestions[company_suggestions['Name'] == selected_company_name]['Symbol'].values[0]
+            
+            # Add ticker select box
             ticker_options = company_suggestions['Symbol'].tolist()
             selected_ticker = st.selectbox('Select Ticker', ticker_options, index=ticker_options.index(ticker))
         else:
             selected_company_name = None
             selected_ticker = st.text_input('Enter Ticker Symbol')
 
+        # Define the start and end dates
         start = st.date_input('Start date', value=pd.to_datetime('2015-01-01'))
         end = st.date_input('End date', value=pd.to_datetime('2023-12-31'))
 
+        # Validate ticker
         if selected_ticker:
+            # Download data for the given ticker
             df = load_data(selected_ticker, start, end)
             if df is None:
                 st.stop()
 
+            # Display data summary and visualizations
             try:
                 st.subheader('Data Summary')
                 st.write(df.describe())
+
+                # Visualizations
                 st.subheader('Closing Price vs Time chart')
                 fig = plt.figure(figsize=(12, 6))
                 plt.plot(df.Close, label='Closing Price')
@@ -108,6 +144,7 @@ def run_streamlit():
                 plt.title('Closing Price vs Time')
                 plt.legend()
                 st.pyplot(fig)
+
                 st.subheader('Closing Price vs Time chart with 100MA & 200MA')
                 ma100 = df.Close.rolling(100).mean()
                 ma200 = df.Close.rolling(200).mean()
@@ -121,24 +158,29 @@ def run_streamlit():
                 plt.legend()
                 st.pyplot(fig)
 
+                # Splitting Data into Training and Testing
                 data_training = pd.DataFrame(df['Close'][0:int(len(df) * 0.70)])
                 data_testing = pd.DataFrame(df['Close'][int(len(df) * 0.70):int(len(df))])
                 st.write(f"Training data shape: {data_training.shape}")
                 st.write(f"Testing data shape: {data_testing.shape}")
 
+                # Check if there are enough data points for testing
                 if len(data_testing) < 100:
                     st.error("Insufficient data points available. Please select a larger date range.")
                     st.stop()
 
+                # Scale the data
                 scaler = MinMaxScaler(feature_range=(0, 1))
                 data_training_array = scaler.fit_transform(data_training)
 
+                # Load the model
                 try:
                     model = load_model('my_model.keras')
                 except Exception as e:
                     st.error(f"Error loading model: {str(e)}")
                     st.stop()
 
+                # Prepare the testing data
                 past_100_days = data_training.tail(100)
                 final_df = pd.concat([past_100_days, data_testing], ignore_index=True)
                 input_data = scaler.transform(final_df)
@@ -150,6 +192,7 @@ def run_streamlit():
                     y_test.append(input_data[i, 0])
                 x_test, y_test = np.array(x_test), np.array(y_test)
 
+                # Make predictions
                 try:
                     with st.spinner('Making predictions...'):
                         y_predicted = model.predict(x_test)
@@ -157,17 +200,22 @@ def run_streamlit():
                     st.error(f"Error making predictions: {str(e)}")
                     st.stop()
 
+                # Rescale the predictions and the test data
                 scale_factor = 1 / scaler.scale_[0]
                 y_predicted = y_predicted.flatten() * scale_factor
                 y_test = y_test * scale_factor
 
+                # Calculate various accuracy metrics
                 mape = mean_absolute_percentage_error(y_test, y_predicted)
                 rmse = math.sqrt(mean_squared_error(y_test, y_predicted))
                 r2 = r2_score(y_test, y_predicted)
                 
+                # Calculate directional accuracy
                 direction_test = np.sign(np.diff(y_test))
                 direction_pred = np.sign(np.diff(y_predicted))
                 directional_accuracy = np.mean(direction_test == direction_pred) * 100
+
+                # Calculate overall accuracy percentage
                 accuracy_percentage = 100 - (mape * 100)
 
                 st.subheader('Model Performance Metrics')
@@ -185,6 +233,7 @@ def run_streamlit():
                     st.metric("Overall Accuracy", f"{accuracy_percentage:.2f}%")
                     st.write("Overall accuracy of the model based on MAPE")
 
+                # Final Graph
                 st.subheader('Predictions vs Original')
                 fig2 = plt.figure(figsize=(12, 6))
                 plt.plot(y_test, 'b', label='Original Price')
@@ -195,28 +244,21 @@ def run_streamlit():
                 plt.legend()
                 st.pyplot(fig2)
 
+                # Residual Plot
                 st.subheader('Residual Plot')
                 residuals = y_test - y_predicted
                 fig3 = plt.figure(figsize=(12, 6))
                 plt.scatter(y_predicted, residuals)
+                plt.axhline(y=0, color='r', linestyle='-')
                 plt.xlabel('Predicted Values')
                 plt.ylabel('Residuals')
-                plt.title('Residual Plot')
-                plt.axhline(y=0, color='r', linestyle='--')
+                plt.title('Residuals vs Predicted Values')
                 st.pyplot(fig3)
-
-                st.subheader('Distribution of Residuals')
-                fig4 = plt.figure(figsize=(12, 6))
-                plt.hist(residuals, bins=50)
-                plt.xlabel('Residuals')
-                plt.ylabel('Frequency')
-                plt.title('Distribution of Residuals')
-                st.pyplot(fig4)
-
             except Exception as e:
-                st.error(f"An unexpected error occurred: {str(e)}")
+                st.error(f"Error in processing: {str(e)}")
         else:
-            st.error("Please enter a valid company name, ticker symbol and date range.")
+            st.write("Please enter a valid ticker symbol.")
+
     threading.Thread(target=run).start()
     return {"message": "Streamlit app is running"}
 
