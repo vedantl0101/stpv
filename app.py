@@ -737,4 +737,4 @@ if selected_ticker:
     except Exception as e:
         st.error(f"An error occurred while processing data: {str(e)}")
 else:
-    st.warning("Please enter a valid ticker symbol to proceed.")
+    st.warning("Please enter a valid company name, ticker symbol and date range.")
