@@ -615,12 +615,19 @@ if selected_ticker:
         plt.legend()
         st.pyplot(fig)
 
+        # # Splitting Data into Training and Testing
+        # data_training = df['Close'][:int(len(df) * 0.70)]
+        # data_testing = df['Close'][int(len(df) * 0.70):]
+        # st.write(f"Training data shape: {data_training.shape}")
+        # st.write(f"Testing data shape: {data_testing.shape}")
+
         # Splitting Data into Training and Testing
-        data_training = df['Close'][:int(len(df) * 0.70)]
-        data_testing = df['Close'][int(len(df) * 0.70):]
+        data_training = pd.DataFrame(df['Close'][0:int(len(df) * 0.70)])
+        data_testing = pd.DataFrame(df['Close'][int(len(df) * 0.70):int(len(df))])
         st.write(f"Training data shape: {data_training.shape}")
         st.write(f"Testing data shape: {data_testing.shape}")
 
+        
         # Check if there are enough data points for testing
         if len(data_testing) < 100:
             st.error("Insufficient data points available. Please select a larger date range.")
