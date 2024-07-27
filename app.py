@@ -966,25 +966,25 @@ if selected_ticker:
         plt.legend()
         st.pyplot(fig2)
 
-        # # Residual Plot
-        # st.subheader('Residual Plot')
-        # residuals = y_test - y_predicted
-        # fig3 = plt.figure(figsize=(12, 6))
-        # plt.scatter(y_predicted, residuals)
-        # plt.xlabel('Predicted Values')
-        # plt.ylabel('Residuals')
-        # plt.title('Residual Plot')
-        # plt.axhline(y=0, color='r', linestyle='--')
-        # st.pyplot(fig3)
+        # Residual Plot
+        st.subheader('Residual Plot')
+        residuals = y_test - y_predicted
+        fig3 = plt.figure(figsize=(12, 6))
+        plt.scatter(y_predicted, residuals)
+        plt.xlabel('Predicted Values')
+        plt.ylabel('Residuals')
+        plt.title('Residual Plot')
+        plt.axhline(y=0, color='r', linestyle='--')
+        st.pyplot(fig3)
 
-        # # Distribution of Residuals
-        # st.subheader('Distribution of Residuals')
-        # fig4 = plt.figure(figsize=(12, 6))
-        # plt.hist(residuals, bins=50)
-        # plt.xlabel('Residuals')
-        # plt.ylabel('Frequency')
-        # plt.title('Distribution of Residuals')
-        # st.pyplot(fig4)
+        # Distribution of Residuals
+        st.subheader('Distribution of Residuals')
+        fig4 = plt.figure(figsize=(12, 6))
+        plt.hist(residuals, bins=50)
+        plt.xlabel('Residuals')
+        plt.ylabel('Frequency')
+        plt.title('Distribution of Residuals')
+        st.pyplot(fig4)
 
     except Exception as e:
         st.error(f"An error occurred while processing data: {str(e)}")
