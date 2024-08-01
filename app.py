@@ -1000,7 +1000,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import yfinance as yf
 import streamlit as st
-from keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_absolute_percentage_error, mean_squared_error, r2_score
 import math
@@ -1147,6 +1146,7 @@ if selected_ticker:
         # Load the model
         def load_model_keras():
             try:
+                from keras.models import load_model
                 return load_model('my_model.keras')
             except Exception as e:
                 st.error(f"Error loading model: {str(e)}")
@@ -1216,16 +1216,16 @@ if selected_ticker:
         plt.plot(y_predicted, 'r', label='Predicted Price')
         plt.xlabel('Time')
         plt.ylabel('Price')
-        plt.title('Predictions vs Original Prices')
+        plt.title('Predictions vs Original')
         plt.legend()
         st.pyplot(fig2)
 
         # Residual Plot
-        st.subheader('Residual Plot')
         residuals = y_test - y_predicted
+        st.subheader('Residual Plot')
         fig3 = plt.figure(figsize=(12, 6))
-        plt.scatter(y_predicted, residuals)
-        plt.xlabel('Predicted Values')
+        plt.plot(residuals)
+        plt.xlabel('Time')
         plt.ylabel('Residuals')
         plt.title('Residual Plot')
         plt.axhline(y=0, color='r', linestyle='--')
@@ -1244,4 +1244,5 @@ if selected_ticker:
         st.error(f"An error occurred while processing data: {str(e)}")
 else:
     st.warning("Please enter a valid company name, ticker symbol and date range.")
+
 
