@@ -1005,6 +1005,7 @@ from sklearn.metrics import mean_absolute_percentage_error, mean_squared_error, 
 import math
 import os
 from dotenv import load_dotenv
+import tensorflow as tf
 
 # Load environment variables from .env file (if needed for other configurations)
 load_dotenv()
@@ -1144,21 +1145,13 @@ if selected_ticker:
         data_training_array = scaler.fit_transform(np.array(data_training).reshape(-1, 1))
 
         # Load the model
-        def load_model_keras():
-            try:
-                from keras.models import load_model
-                return load_model('my_model.keras')
-            except Exception as e:
-                st.error(f"Error loading model: {str(e)}")
-                return None
-
         model = load_model_keras()
         if model is None:
             st.stop()
 
         # Prepare the testing data
-        past_100_days = data_training[-100:]
-        final_df = pd.concat([past_100_days, data_testing])
+        past_100_days = data_training_array[-100:]
+        final_df = pd.concat([pd.DataFrame(past_100_days), data_testing], ignore_index=True)
         input_data = scaler.transform(np.array(final_df).reshape(-1, 1))
 
         x_test = []
