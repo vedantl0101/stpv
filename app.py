@@ -1191,25 +1191,14 @@ if selected_ticker:
         direction_pred = np.sign(np.diff(y_predicted))
         directional_accuracy = np.mean(direction_test == direction_pred) * 100
 
-        # Calculate overall accuracy percentage
-        accuracy_percentage = 100 - (mape * 100)
+        # Display accuracy metrics
+        st.subheader('Accuracy Metrics')
+        st.write(f"Mean Absolute Percentage Error (MAPE): {mape}")
+        st.write(f"Root Mean Squared Error (RMSE): {rmse}")
+        st.write(f"R-squared: {r2}")
+        st.write(f"Directional Accuracy: {directional_accuracy}%")
 
-        st.subheader('Model Performance Metrics')
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("MAPE", f"{mape:.2%}")
-            st.write("Mean Absolute Percentage Error (lower is better)")
-            st.metric("R-squared", f"{r2:.4f}")
-            st.write("Coefficient of Determination (higher is better, max 1.0)")
-        with col2:
-            st.metric("RMSE", f"{rmse:.2f}")
-            st.write("Root Mean Square Error (lower is better)")
-            st.metric("Directional Accuracy", f"{directional_accuracy:.2f}%")
-            st.write("Accuracy in predicting price direction")
-            st.metric("Overall Accuracy", f"{accuracy_percentage:.2f}%")
-            st.write("Overall accuracy of the model based on MAPE")
-
-        # Final Graph
+        # Visualize predictions vs original prices
         st.subheader('Predictions vs Original')
         fig2 = plt.figure(figsize=(12, 6))
         plt.plot(y_test, 'b', label='Original Price')
@@ -1244,5 +1233,6 @@ if selected_ticker:
         st.error(f"An error occurred while processing data: {str(e)}")
 else:
     st.warning("Please enter a valid company name, ticker symbol and date range.")
+
 
 
